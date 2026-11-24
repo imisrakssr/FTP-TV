@@ -3,6 +3,7 @@ package com.israk.ftptv.player
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -39,6 +40,8 @@ class LiveEngine(context: Context, private val scope: CoroutineScope, private va
     }
 
     fun interface Listener { fun onState(s: State) }
+
+    companion object { const val TAG = "FTPTV" }
 
     private val app = FtpTvApp.instance
     private val repo = app.repo
@@ -89,7 +92,9 @@ class LiveEngine(context: Context, private val scope: CoroutineScope, private va
                         rounds = 0
                         val ch = channel ?: return
                         val ref = active ?: return
-                        repo.noteSpeed(ref.sourceId, (System.currentTimeMillis() - startedAt).toInt().coerceAtMost(8000) / 2, true)
+                        val took = (System.currentTimeMillis() - startedAt).toInt()
+                        Log.i(TAG, "OK|${ch.number}|${ch.name}|${repo.sourceTitle(ref.sourceId)}|${took}ms|${order.size}")
+                        repo.noteSpeed(ref.sourceId, took.coerceAtMost(8000) / 2, true)
                         listener.onState(State.Playing(ch, repo.sourceTitle(ref.sourceId), order.indexOf(ref) + 1, order.size))
                     }
                     Player.STATE_BUFFERING -> startWatchdog()
@@ -152,6 +157,7 @@ class LiveEngine(context: Context, private val scope: CoroutineScope, private va
                     delay(2500)
                     next()
                 } else {
+                    Log.w(TAG, "FAIL|${ch.number}|${ch.name}|tried ${tried.size} of ${order.size}")
                     listener.onState(State.Failed(ch, if (order.isEmpty()) "No server has this channel right now" else "All servers failed — try again later"))
                 }
                 return@launch
@@ -189,6 +195,7 @@ class LiveEngine(context: Context, private val scope: CoroutineScope, private va
         stopWatchdog()
         val ref = active
         if (ref != null) {
+            Log.w(TAG, "SKIP|${channel?.number}|${channel?.name}|${repo.sourceTitle(ref.sourceId)}|$why")
             tried += repo.keyOf(ref)
             repo.noteSpeed(ref.sourceId, 0, false)
             // a pinned server that keeps failing shouldn't trap the channel
