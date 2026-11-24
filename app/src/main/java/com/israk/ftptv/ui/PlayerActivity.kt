@@ -339,6 +339,10 @@ class PlayerActivity : ComponentActivity(), OverlayPanel.Host {
 
     private fun openOverlay() {
         if (all.isEmpty() && !app.repo.loading.value) { onSettings(); return }
+        ui.removeCallbacks(hideBanner)
+        banner.animate().cancel()
+        banner.visibility = View.GONE // the panel covers this corner; the banner peeking through looks broken
+        volumeHud.visibility = View.GONE
         overlay.show()
         onUserActivity()
     }
