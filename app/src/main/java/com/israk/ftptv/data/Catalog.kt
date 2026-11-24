@@ -17,6 +17,10 @@ import java.net.URLDecoder
  */
 object Catalog {
 
+    // declared first: object fields initialise top to bottom, and byKey below already needs these
+    private val stop = setOf("hd", "fhd", "uhd", "sd", "hq", "live", "bdix", "nix", "backup", "official", "1080p", "720p", "hevc", "new", "channel_")
+    private val digitHd = Regex("^(\\d+)hd$")
+
     private fun c(id: String, name: String, region: Region, cats: Set<Category>, vararg aliases: String) =
         CatalogChannel(id, name, cats, region, listOf(name) + aliases)
 
@@ -182,8 +186,10 @@ object Catalog {
         c("madinah", "Madinah Live (Sunnah TV)", Region.INTL, ISL, "Al Sunnah Al Nabawiyah TV", "Saudi Sunnah", "Sunnah TV"),
     )
 
-    private val byKey: Map<String, CatalogChannel> = buildMap {
-        for (ch in all) for (a in ch.aliases) for (k in variants(a)) putIfAbsent(k, ch)
+    private val byKey: Map<String, CatalogChannel> by lazy {
+        buildMap {
+            for (ch in all) for (a in ch.aliases) for (k in variants(a)) putIfAbsent(k, ch)
+        }
     }
 
     fun match(rawName: String): CatalogChannel? {
@@ -191,8 +197,6 @@ object Catalog {
         return null
     }
 
-    private val stop = setOf("hd", "fhd", "uhd", "sd", "hq", "live", "bdix", "nix", "backup", "official", "1080p", "720p", "hevc", "new", "channel_")
-    private val digitHd = Regex("^(\\d+)hd$")
 
     /** A name reduced to a few comparable keys: "SONY-SPORTS.5HD" → sonysports5, "Jamunatv" → jamunatv / jamuna. */
     fun variants(name: String): List<String> {

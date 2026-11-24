@@ -2,3 +2,7 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# readable crash traces
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
