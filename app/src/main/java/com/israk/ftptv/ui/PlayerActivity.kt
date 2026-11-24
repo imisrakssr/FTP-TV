@@ -27,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import coil.dispose
 import coil.load
 import com.israk.ftptv.FtpTvApp
 import com.israk.ftptv.data.Channel
@@ -256,6 +257,7 @@ class PlayerActivity : ComponentActivity(), OverlayPanel.Host {
         bannerNum.text = ch.number.toString()
         bannerName.text = (if (prefs.isFavorite(ch.id)) "★ " else "") + ch.name
         bannerSub.text = sub
+        bannerLogo.dispose()
         if (ch.logo != null) bannerLogo.load(ch.logo) { size(240, 160) } else bannerLogo.setImageDrawable(null)
         banner.animate().cancel()
         banner.alpha = 1f

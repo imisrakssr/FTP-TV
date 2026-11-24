@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.dispose
 import coil.load
 import com.israk.ftptv.FtpTvApp
 import com.israk.ftptv.data.Channel
@@ -48,6 +49,8 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
     private val sub = context.label("", 13f, C.DIM)
     private val actions = LinearLayout(context)
     private var shownKey = "all"
+    /** True while the panel is opening: Android may hand focus to the first category on its own, which must not switch the list. */
+    private var settling = false
     private var shownChannels: List<Channel> = emptyList()
     private val catAdapter: ListAdapter<Lists.Entry>
     private val chAdapter: ListAdapter<Channel>
@@ -84,7 +87,7 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
                 v as TextView
                 v.text = e.label
                 v.isSelected = e.key == shownKey
-                v.setOnFocusChangeListener { _, f -> if (f) { host.onUserActivity(); showList(e.key, keepFocus = true) } }
+                v.setOnFocusChangeListener { _, f -> if (f && !settling) { host.onUserActivity(); showList(e.key, keepFocus = true) } }
                 v.setOnClickListener { showList(e.key, keepFocus = false); focusCurrentOrFirst() }
             },
         )
@@ -148,6 +151,7 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
             if (ch.streams.size > 1) append("${ch.streams.size} srv")
         }
         val logo = v.findViewWithTag<ImageView>("logo")
+        logo.dispose() // a recycled row must not finish loading the previous channel's logo
         if (ch.logo != null) logo.load(ch.logo) { size(160, 110) } else logo.setImageDrawable(null)
         v.setOnClickListener { host.onPick(shownKey, ch) }
         v.setOnLongClickListener { host.onFavMenu(ch); true }
@@ -157,6 +161,7 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
     val isOpen get() = visibility == VISIBLE
 
     fun show() {
+        settling = true
         buildActions()
         val groups = app.prefs.favorites.value
         catAdapter.submit(Lists.entries(groups))
@@ -215,11 +220,17 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
     private fun focusCurrentOrFirst() {
         val idx = shownChannels.indexOfFirst { it.id == host.currentChannel()?.id }.coerceAtLeast(0)
         if (shownChannels.isEmpty()) {
-            post { cats.findViewHolderForAdapterPosition(catAdapter.items.indexOfFirst { it.key == shownKey }.coerceAtLeast(0))?.itemView?.requestFocus() ?: cats.requestFocus() }
+            post {
+                cats.findViewHolderForAdapterPosition(catAdapter.items.indexOfFirst { it.key == shownKey }.coerceAtLeast(0))?.itemView?.requestFocus() ?: cats.requestFocus()
+                settling = false
+            }
             return
         }
         (list.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(idx, (list.height / 3).coerceAtLeast(context.dp(120)))
-        list.post { list.findViewHolderForAdapterPosition(idx)?.itemView?.requestFocus() ?: list.requestFocus() }
+        list.post {
+            list.findViewHolderForAdapterPosition(idx)?.itemView?.requestFocus() ?: list.requestFocus()
+            settling = false
+        }
     }
 
     private fun buildActions() {

@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.dispose
 import coil.load
 import com.israk.ftptv.FtpTvApp
 import com.israk.ftptv.data.Channel
@@ -139,6 +140,7 @@ class FavoritesActivity : ComponentActivity() {
         v.isSelected = movingChannel == ch.id
         v.findViewWithTag<TextView>("name").text = (if (movingChannel == ch.id) "↕  " else "${ch.number}  ") + ch.name
         val logo = v.findViewWithTag<ImageView>("logo")
+        logo.dispose()
         if (ch.logo != null) logo.load(ch.logo) { size(160, 110) } else logo.setImageDrawable(null)
         v.setOnClickListener {
             if (!isTv) { channelMenu(ch); return@setOnClickListener }

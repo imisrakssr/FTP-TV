@@ -17,6 +17,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil.dispose
 import coil.load
 import com.israk.ftptv.FtpTvApp
 import com.israk.ftptv.data.Channel
@@ -165,6 +166,7 @@ class PhoneHomeActivity : ComponentActivity() {
     private fun bindCard(v: View, ch: Channel) {
         v.findViewWithTag<TextView>("name").text = (if (prefs.isFavorite(ch.id)) "★ " else "") + ch.name
         val logo = v.findViewWithTag<ImageView>("logo")
+        logo.dispose()
         if (ch.logo != null) logo.load(ch.logo) { size(200, 140) } else logo.setImageDrawable(null)
         v.setOnClickListener { prefs.lastList = key; PlayerActivity.open(this, ch.id, key) }
         v.setOnLongClickListener { FavoritesActivity.quickMenu(this, ch.id, ch.name) { renderGrid() }; true }
