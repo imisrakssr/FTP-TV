@@ -54,6 +54,8 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
 
     init {
         visibility = GONE
+        descendantFocusability = FOCUS_BLOCK_DESCENDANTS
+        isFocusable = false
         isClickable = true // swallow touches meant for the video below
         setOnClickListener { hide() }
 
@@ -62,6 +64,7 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
             background = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(0xF2000000.toInt(), 0xD9000000.toInt(), 0x00000000))
             setPadding(context.dp(24), context.dp(20), context.dp(60), context.dp(16))
             isClickable = true
+            isFocusable = false
         }
         addView(panel, flp(WRAP, MATCH, Gravity.START))
 
@@ -158,6 +161,7 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
         val groups = app.prefs.favorites.value
         catAdapter.submit(Lists.entries(groups))
         showList(host.currentList(), keepFocus = false)
+        descendantFocusability = FOCUS_AFTER_DESCENDANTS
         visibility = VISIBLE
         alpha = 0f
         animate().alpha(1f).setDuration(120).start()
@@ -166,8 +170,11 @@ class OverlayPanel(context: Context, private val host: Host) : FrameLayout(conte
 
     fun hide() {
         if (!isOpen) return
-        animate().alpha(0f).setDuration(100).withEndAction { visibility = GONE }.start()
+        // block focus first, so clearing it can't land on another row of the panel that's going away
+        descendantFocusability = FOCUS_BLOCK_DESCENDANTS
         findFocus()?.clearFocus()
+        animate().cancel()
+        visibility = GONE
     }
 
     /** Re-binds after favorites / mute changes, keeping focus where it is. */

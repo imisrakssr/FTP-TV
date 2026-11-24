@@ -201,12 +201,12 @@ class PlayerActivity : ComponentActivity(), OverlayPanel.Host {
         when (s) {
             is LiveEngine.State.Connecting -> {
                 if (s.ch.id != current?.id) return
-                val srv = if (s.server != null) "${s.server}" + (if (s.total > 1) " (${s.index}/${s.total})" else "") else if (s.total > 1) "finding the fastest of ${s.total} servers" else ""
+                val srv = s.server ?: if (s.total > 1) "finding the fastest of ${s.total} servers" else ""
                 showBanner(s.ch, "Connecting… $srv".trim(), hideAfter = 0)
             }
             is LiveEngine.State.Playing -> {
                 if (s.ch.id != current?.id) return
-                showBanner(s.ch, s.server + if (s.total > 1) " · server ${s.index}/${s.total}" else "", hideAfter = 3500)
+                showBanner(s.ch, s.server + if (s.total > 1) " · ${s.total} servers" else "", hideAfter = 3500)
             }
             is LiveEngine.State.Failed -> {
                 if (s.ch.id != current?.id) return
@@ -324,7 +324,7 @@ class PlayerActivity : ComponentActivity(), OverlayPanel.Host {
             (if (muted) "  Muted" else "  $v") + (if (isTv) "\nhold ◀ to ${if (muted) "unmute" else "mute"}" else "")
         volumeHud.visibility = View.VISIBLE
         ui.removeCallbacks(hideVolume)
-        ui.postDelayed(hideVolume, 2200)
+        ui.postDelayed(hideVolume, 2600)
     }
 
     // ── remote control ──
@@ -349,8 +349,7 @@ class PlayerActivity : ComponentActivity(), OverlayPanel.Host {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (overlay.isOpen) {
             if (keyCode == KeyEvent.KEYCODE_MENU) { overlay.hide(); return true }
-            // keys the panel didn't use must not zap or change volume behind it
-            if (keyCode in dpadKeys) return true
+            // arrows must stay unhandled here: Android moves the focus inside the panel only for keys nobody consumed
             return super.onKeyDown(keyCode, event)
         }
         when (keyCode) {
